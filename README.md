@@ -1,4 +1,4 @@
-# AccessibleFullBodyCalibrator
+# NodeAttachmentIssuesHotline
 
 A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that fixes the bug which causes ProtoFlux nodes to remain in the same group even when they have been disconnected.
 
