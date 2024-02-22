@@ -1,9 +1,9 @@
+using FrooxEngine;
+using FrooxEngine.ProtoFlux;
 using HarmonyLib;
 using ResoniteModLoader;
-using FrooxEngine;
-using System.Reflection;
 using System;
-using FrooxEngine.ProtoFlux;
+using System.Reflection;
 
 namespace NodeAttachmentIssuesHotline
 {
@@ -86,6 +86,36 @@ namespace NodeAttachmentIssuesHotline
 							Error("Exception while scheduling group rebuild:\n" + e.ToString());
 						}
 					}
+				}
+				return true;
+			}
+		}
+
+		[HarmonyPatch(typeof(ProtoFluxNode))]
+		[HarmonyPatch("OnDestroying")]
+		class Patch_ProtoFluxNode_OnDestroying
+		{
+			static bool Prefix(ProtoFluxNode __instance)
+			{
+				if (!Config.GetValue(MOD_ENABLED)) return true;
+				if (__instance == null) return true;
+				Debug("OnDestroying ProtoFluxNode: " + __instance.Name ?? "NULL");
+				foreach (ProtoFluxNode node in __instance.ReferencedNodes)
+				{
+					__instance.World.RunSynchronously(() =>
+					{
+						if (ElementExists(node))
+						{
+							try
+							{
+								node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
+							}
+							catch (Exception e)
+							{
+								Error("Exception while scheduling group rebuild:\n" + e.ToString());
+							}
+						}
+					});
 				}
 				return true;
 			}
