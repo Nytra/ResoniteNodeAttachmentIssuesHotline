@@ -35,13 +35,13 @@ namespace NodeAttachmentIssuesHotline
 		[HarmonyPatch("Disconnect")]
 		class Patch_ProtoFluxInputProxy_Disconnect
 		{
-			static PropertyInfo currentTargetField = AccessTools.Property(typeof(ProtoFluxInputProxy), "CurrentTarget");
+			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxInputProxy), "CurrentTarget");
 			static bool Prefix(ProtoFluxInputProxy __instance)
 			{
 				if (!Config.GetValue(MOD_ENABLED)) return true;
 				if (__instance == null) return true;
 				Debug("Disconnect ProtoFluxInputProxy");
-				var currentTarget = (INodeOutput)currentTargetField?.GetValue(__instance);
+				var currentTarget = (INodeOutput)currentTargetProperty?.GetValue(__instance);
 				if (ElementExists(currentTarget))
 				{
 					var node = currentTarget.FindNearestParent<ProtoFluxNode>();
@@ -65,13 +65,13 @@ namespace NodeAttachmentIssuesHotline
 		[HarmonyPatch("Disconnect")]
 		class Patch_ProtoFluxImpulseProxy_Disconnect
 		{
-			static PropertyInfo currentTargetField = AccessTools.Property(typeof(ProtoFluxImpulseProxy), "CurrentTarget");
+			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxImpulseProxy), "CurrentTarget");
 			static bool Prefix(ProtoFluxImpulseProxy __instance)
 			{
 				if (!Config.GetValue(MOD_ENABLED)) return true;
 				if (__instance == null) return true;
 				Debug("Disconnect ProtoFluxImpulseProxy");
-				var currentTarget = (INodeOperation)currentTargetField?.GetValue(__instance);
+				var currentTarget = (INodeOperation)currentTargetProperty?.GetValue(__instance);
 				if (ElementExists(currentTarget))
 				{
 					var node = currentTarget.FindNearestParent<ProtoFluxNode>();
