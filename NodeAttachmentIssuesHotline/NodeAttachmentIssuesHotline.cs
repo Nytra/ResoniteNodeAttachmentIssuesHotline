@@ -4,6 +4,7 @@ using HarmonyLib;
 using ResoniteModLoader;
 using System;
 using System.Reflection;
+//using ResoniteHotReloadLib;
 
 namespace NodeAttachmentIssuesHotline
 {
@@ -11,7 +12,7 @@ namespace NodeAttachmentIssuesHotline
 	{
 		public override string Name => "NodeAttachmentIssuesHotline";
 		public override string Author => "Nytra";
-		public override string Version => "1.0.0";
+		public override string Version => "1.1.1";
 		public override string Link => "https://github.com/Nytra/ResoniteNodeAttachmentIssuesHotline";
 
 		public static ModConfiguration Config;
@@ -22,6 +23,24 @@ namespace NodeAttachmentIssuesHotline
 		public override void OnEngineInit()
 		{
 			Config = GetConfiguration();
+			//HotReloader.RegisterForHotReload(this);
+			PatchStuff();
+		}
+
+		//static void OnHotReload(ResoniteMod mod)
+		//{
+		//	Config = mod.GetConfiguration();
+		//	PatchStuff();
+		//}
+
+		//static void BeforeHotReload()
+		//{
+		//	Harmony harmony = new Harmony("owo.Nytra.NodeAttachmentIssuesHotline");
+		//	harmony.UnpatchAll("owo.Nytra.NodeAttachmentIssuesHotline");
+		//}
+
+		static void PatchStuff()
+		{
 			Harmony harmony = new Harmony("owo.Nytra.NodeAttachmentIssuesHotline");
 			harmony.PatchAll();
 		}
@@ -30,6 +49,19 @@ namespace NodeAttachmentIssuesHotline
 		{
 			return element != null && !element.IsRemoved;
 		}
+
+		//[HarmonyPatch(typeof(Userspace), "OnCommonUpdate")]
+		//class HotReloadPatch
+		//{
+		//	static void Postfix()
+		//	{
+		//		if (!Config.GetValue(MOD_ENABLED)) return;
+		//		if (Engine.Current.InputInterface.GetKeyDown(Key.F3))
+		//		{
+		//			HotReloader.HotReload(typeof(NodeAttachmentIssuesHotline));
+		//		}
+		//	}
+		//}
 
 		[HarmonyPatch(typeof(ProtoFluxInputProxy))]
 		[HarmonyPatch("Disconnect")]
@@ -45,10 +77,11 @@ namespace NodeAttachmentIssuesHotline
 				if (ElementExists(currentTarget))
 				{
 					var node = currentTarget.FindNearestParent<ProtoFluxNode>();
-					if (ElementExists(node))
+					if (ElementExists(node) && node.Group != null)
 					{
 						try
 						{
+							Debug("Scheduling group rebuild for group: " + node.Group.Name);
 							__instance.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
@@ -75,10 +108,11 @@ namespace NodeAttachmentIssuesHotline
 				if (ElementExists(currentTarget))
 				{
 					var node = currentTarget.FindNearestParent<ProtoFluxNode>();
-					if (ElementExists(node))
+					if (ElementExists(node) && node.Group != null)
 					{
 						try
 						{
+							Debug("Scheduling group rebuild for group: " + node.Group.Name);
 							__instance.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
@@ -99,23 +133,21 @@ namespace NodeAttachmentIssuesHotline
 			{
 				if (!Config.GetValue(MOD_ENABLED)) return true;
 				if (__instance == null) return true;
-				Debug("OnDestroying ProtoFluxNode: " + __instance.Name ?? "NULL");
-				foreach (ProtoFluxNode node in __instance.ReferencedNodes)
+				Debug($"OnDestroying ProtoFluxNode: {__instance.Name ?? "NULL"} {__instance.ReferenceID.ToString() ?? "NULL"}");
+				foreach (ProtoFluxNode node in __instance.Group?.Nodes)
 				{
-					__instance.World.RunSynchronously(() =>
+					if (ElementExists(node) && node.Group != null)
 					{
-						if (ElementExists(node))
+						try
 						{
-							try
-							{
-								node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
-							}
-							catch (Exception e)
-							{
-								Error("Exception while scheduling group rebuild:\n" + e.ToString());
-							}
+							Debug("Scheduling group rebuild for group: " + node.Group.Name);
+							node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
-					});
+						catch (Exception e)
+						{
+							Error("Exception while scheduling group rebuild:\n" + e.ToString());
+						}
+					}
 				}
 				return true;
 			}
