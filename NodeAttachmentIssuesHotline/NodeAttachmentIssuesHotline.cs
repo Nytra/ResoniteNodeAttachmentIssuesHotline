@@ -12,7 +12,7 @@ namespace NodeAttachmentIssuesHotline
 	{
 		public override string Name => "NodeAttachmentIssuesHotline";
 		public override string Author => "Nytra";
-		public override string Version => "1.1.1";
+		public override string Version => "1.1.2";
 		public override string Link => "https://github.com/Nytra/ResoniteNodeAttachmentIssuesHotline";
 
 		public static ModConfiguration Config;
@@ -81,7 +81,7 @@ namespace NodeAttachmentIssuesHotline
 					{
 						try
 						{
-							Debug("Scheduling group rebuild for group: " + node.Group.Name);
+							Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
 							__instance.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
@@ -112,7 +112,7 @@ namespace NodeAttachmentIssuesHotline
 					{
 						try
 						{
-							Debug("Scheduling group rebuild for group: " + node.Group.Name);
+							Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
 							__instance.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
@@ -140,7 +140,7 @@ namespace NodeAttachmentIssuesHotline
 					{
 						try
 						{
-							Debug("Scheduling group rebuild for group: " + node.Group.Name);
+							Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
 							node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
