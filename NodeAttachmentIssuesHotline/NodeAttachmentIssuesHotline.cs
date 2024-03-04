@@ -133,14 +133,15 @@ namespace NodeAttachmentIssuesHotline
 			{
 				if (!Config.GetValue(MOD_ENABLED)) return true;
 				if (__instance == null) return true;
-				Debug($"OnDestroying ProtoFluxNode: {__instance.Name ?? "NULL"} {__instance.ReferenceID.ToString() ?? "NULL"}");
-				foreach (ProtoFluxNode node in __instance.Group?.Nodes)
+				if (__instance.Group?.Nodes == null) return true;
+				Debug($"OnDestroying ProtoFluxNode: {__instance.Name ?? "NULL"} {__instance.ReferenceID.ToString() ?? "NULL"} Group: {__instance.Group.Name ?? "NULL"}");
+				foreach (ProtoFluxNode node in __instance.Group.Nodes)
 				{
 					if (ElementExists(node) && node.Group != null)
 					{
 						try
 						{
-							Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
+							//Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
 							node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
 						}
 						catch (Exception e)
