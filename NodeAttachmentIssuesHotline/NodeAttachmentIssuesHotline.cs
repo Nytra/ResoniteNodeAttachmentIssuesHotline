@@ -132,23 +132,17 @@ namespace NodeAttachmentIssuesHotline
 			static bool Prefix(ProtoFluxNode __instance)
 			{
 				if (!Config.GetValue(MOD_ENABLED)) return true;
-				if (__instance == null) return true;
+				if (!ElementExists(__instance)) return true;
 				if (__instance.Group?.Nodes == null) return true;
 				Debug($"OnDestroying ProtoFluxNode: {__instance.Name ?? "NULL"} {__instance.ReferenceID.ToString() ?? "NULL"} Group: {__instance.Group.Name ?? "NULL"}");
-				foreach (ProtoFluxNode node in __instance.Group.Nodes)
+				try
 				{
-					if (ElementExists(node) && node.Group != null)
-					{
-						try
-						{
-							//Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
-							node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
-						}
-						catch (Exception e)
-						{
-							Error("Exception while scheduling group rebuild:\n" + e.ToString());
-						}
-					}
+					//Debug("Scheduling group rebuild for group: " + node.Group.Name ?? "NULL");
+					__instance.World.ProtoFlux.ScheduleGroupRebuild(__instance.Group);
+				}
+				catch (Exception e)
+				{
+					Error("Exception while scheduling group rebuild:\n" + e.ToString());
 				}
 				return true;
 			}
