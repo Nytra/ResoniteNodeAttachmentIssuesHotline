@@ -6,7 +6,6 @@ using ResoniteModLoader;
 using System;
 using System.Linq;
 using System.Reflection;
-//using ResoniteHotReloadLib;
 
 namespace NodeAttachmentIssuesHotline
 {
@@ -20,28 +19,17 @@ namespace NodeAttachmentIssuesHotline
 		public static ModConfiguration Config;
 
 		[AutoRegisterConfigKey]
-		static ModConfigurationKey<bool> MOD_ENABLED = new ModConfigurationKey<bool>("MOD_ENABLED", "Mod Enabled:", () => true);
+		static ModConfigurationKey<bool> KEY_MOD_ENABLED = new ModConfigurationKey<bool>("Mod Enabled", "Mod Enabled", () => true);
+		[AutoRegisterConfigKey]
+		static ModConfigurationKey<bool> KEY_NON_LOCAL = new ModConfigurationKey<bool>("Use non-local fix (Experimental)", "Use non-local fix (Experimental)", () => false);
 
 		const string LinkNodeIndentifier = "NodeAttachmentIssuesHotline_Link";
 
 		public override void OnEngineInit()
 		{
 			Config = GetConfiguration();
-			//HotReloader.RegisterForHotReload(this);
 			PatchStuff();
 		}
-
-		//static void OnHotReload(ResoniteMod mod)
-		//{
-		//	Config = mod.GetConfiguration();
-		//	PatchStuff();
-		//}
-
-		//static void BeforeHotReload()
-		//{
-		//	Harmony harmony = new Harmony("owo.Nytra.NodeAttachmentIssuesHotline");
-		//	harmony.UnpatchAll("owo.Nytra.NodeAttachmentIssuesHotline");
-		//}
 
 		static void PatchStuff()
 		{
@@ -56,12 +44,6 @@ namespace NodeAttachmentIssuesHotline
 
 		static void RebuildGroupWithLinkNode(ProtoFluxNode node)
 		{
-			if (!ElementExists(node))
-			{
-				Debug("Node was null in CreateLink method.");
-				return;
-			}
-
 			// Create Link node, attach node, wait, destroy link node
 			var linkNodeSlot = node.LocalUserRoot?.Slot?.AddSlot(LinkNodeIndentifier);
 			if (linkNodeSlot == null)
@@ -76,9 +58,9 @@ namespace NodeAttachmentIssuesHotline
 				linkNodeSlot.Destroy();
 				return;
 			}
-			Debug($"Link attached: {linkNode.Name ?? "NULL"} {linkNode.ReferenceID.ToString() ?? "NULL"}");
+			Debug($"Link attached: {linkNode.Name} {linkNode.ReferenceID}");
 			linkNode.A.Target = (FrooxEngine.ProtoFlux.Core.INode)node;
-			Debug($"Link node target set to Node: {node.Name ?? "NULL"} {node.ReferenceID.ToString() ?? "NULL"}");
+			Debug($"Link node target set to Node: {node.Name} {node.ReferenceID}");
 			linkNode.RunInUpdates(3, () =>
 			{
 				if (ElementExists(linkNode))
@@ -111,14 +93,10 @@ namespace NodeAttachmentIssuesHotline
 			});
 		}
 
-		//static void RebuildGroupLocally(ProtoFluxNode node)
-		//{
-		//	if (!ElementExists(node)) return;
-		//	if (!ElementExists(node.Slot)) return;
-		//	if (!ElementExists(node.Slot.World)) return;
-		//	if (node.Group == null) return;
-		//	node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
-		//}
+		static string GetNodeString(ProtoFluxNode node)
+		{
+			return $"ProtoFluxNode: {node.Name} {node.ReferenceID} Group: {node.Group?.Name}";
+		}
 
 		[HarmonyPatch(typeof(ProtoFluxInputProxy))]
 		[HarmonyPatch("Disconnect")]
@@ -127,8 +105,7 @@ namespace NodeAttachmentIssuesHotline
 			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxInputProxy), "CurrentTarget");
 			static bool Prefix(ProtoFluxInputProxy __instance)
 			{
-				if (!Config.GetValue(MOD_ENABLED)) return true;
-				if (__instance == null) return true;
+				if (!Config.GetValue(KEY_MOD_ENABLED)) return true;
 				Debug("Disconnect ProtoFluxInputProxy");
 				var currentTarget = (INodeOutput)currentTargetProperty?.GetValue(__instance);
 				if (ElementExists(currentTarget))
@@ -138,8 +115,16 @@ namespace NodeAttachmentIssuesHotline
 					{
 						try
 						{
-							Debug("Running link node group rebuild for node: " + node.Name ?? "NULL");
-							RebuildGroupWithLinkNode(node);
+							if (Config.GetValue(KEY_NON_LOCAL))
+							{
+								Debug($"Running non-local node group rebuild (using Link node) for {GetNodeString(node)}");
+								RebuildGroupWithLinkNode(node);
+							}
+							else
+							{
+								Debug($"Scheduling (local) node group rebuild for {GetNodeString(node)}");
+								node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
+							}
 						}
 						catch (Exception e)
 						{
@@ -158,8 +143,7 @@ namespace NodeAttachmentIssuesHotline
 			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxImpulseProxy), "CurrentTarget");
 			static bool Prefix(ProtoFluxImpulseProxy __instance)
 			{
-				if (!Config.GetValue(MOD_ENABLED)) return true;
-				if (__instance == null) return true;
+				if (!Config.GetValue(KEY_MOD_ENABLED)) return true;
 				Debug("Disconnect ProtoFluxImpulseProxy");
 				var currentTarget = (INodeOperation)currentTargetProperty?.GetValue(__instance);
 				if (ElementExists(currentTarget))
@@ -169,8 +153,16 @@ namespace NodeAttachmentIssuesHotline
 					{
 						try
 						{
-							Debug("Running link node group rebuild for node: " + node.Name ?? "NULL");
-							RebuildGroupWithLinkNode(node);
+							if (Config.GetValue(KEY_NON_LOCAL))
+							{
+								Debug($"Running non-local node group rebuild (using Link node) for {GetNodeString(node)}");
+								RebuildGroupWithLinkNode(node);
+							}
+							else
+							{
+								Debug($"Scheduling (local) node group rebuild for {GetNodeString(node)}");
+								node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
+							}
 						}
 						catch (Exception e)
 						{
@@ -188,11 +180,10 @@ namespace NodeAttachmentIssuesHotline
 		{
 			static bool Prefix(ProtoFluxNode __instance)
 			{
-				if (!Config.GetValue(MOD_ENABLED)) return true;
-				if (!ElementExists(__instance)) return true;
-				if (!Engine.Current.IsReady) return true;
+				if (!Config.GetValue(KEY_MOD_ENABLED)) return true;
+				if (Engine.Current?.IsReady != true) return true;
 				if (__instance.Group?.Nodes == null) return true;
-				Debug($"OnDestroying ProtoFluxNode: {__instance.Name ?? "NULL"} {__instance.ReferenceID.ToString() ?? "NULL"} Group: {__instance.Group.Name ?? "NULL"}");
+
 				ProtoFluxNodeGroup group = __instance.Group;
 
 				// wait some updates just in case the rest of the nodes in the group are also being destroyed
@@ -204,8 +195,17 @@ namespace NodeAttachmentIssuesHotline
 						var node = group.Nodes.FirstOrDefault(node => ElementExists(node));
 						if (node != null)
 						{
-							Debug("Running link node group rebuild for node: " + node.Name ?? "NULL");
-							RebuildGroupWithLinkNode(node);
+							Debug($"Destroyed: {GetNodeString(node)}");
+							if (Config.GetValue(KEY_NON_LOCAL))
+							{
+								Debug($"Running non-local node group rebuild (using Link node) for {GetNodeString(node)}");
+								RebuildGroupWithLinkNode(node);
+							}
+							else
+							{
+								Debug($"Scheduling (local) node group rebuild for {GetNodeString(node)}");
+								node.World.ProtoFlux.ScheduleGroupRebuild(node.Group);
+							}
 						}
 					}
 				});
