@@ -13,7 +13,7 @@ namespace NodeAttachmentIssuesHotline
 	{
 		public override string Name => "NodeAttachmentIssuesHotline";
 		public override string Author => "Nytra";
-		public override string Version => "2.0.0";
+		public override string Version => "2.0.1";
 		public override string Link => "https://github.com/Nytra/ResoniteNodeAttachmentIssuesHotline";
 
 		public static ModConfiguration Config;
@@ -102,7 +102,11 @@ namespace NodeAttachmentIssuesHotline
 		[HarmonyPatch("Disconnect")]
 		class Patch_ProtoFluxInputProxy_Disconnect
 		{
-			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxInputProxy), "CurrentTarget");
+			static PropertyInfo currentTargetProperty = typeof(ProtoFluxInputProxy)
+				.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
+				.Where(x => x.Name == "CurrentTarget")
+				.Where(x => x.PropertyType == typeof(INodeOutput))
+				.FirstOrDefault();
 			static bool Prefix(ProtoFluxInputProxy __instance)
 			{
 				if (!Config.GetValue(KEY_MOD_ENABLED)) return true;
@@ -140,7 +144,11 @@ namespace NodeAttachmentIssuesHotline
 		[HarmonyPatch("Disconnect")]
 		class Patch_ProtoFluxImpulseProxy_Disconnect
 		{
-			static PropertyInfo currentTargetProperty = AccessTools.Property(typeof(ProtoFluxImpulseProxy), "CurrentTarget");
+			static PropertyInfo currentTargetProperty = typeof(ProtoFluxImpulseProxy)
+				.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance)
+				.Where(x => x.Name == "CurrentTarget")
+				.Where(x => x.PropertyType == typeof(INodeOperation))
+				.FirstOrDefault();
 			static bool Prefix(ProtoFluxImpulseProxy __instance)
 			{
 				if (!Config.GetValue(KEY_MOD_ENABLED)) return true;
