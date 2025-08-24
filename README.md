@@ -3,8 +3,9 @@
 A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader) mod for [Resonite](https://resonite.com/) that fixes the bug which causes ProtoFlux nodes to remain in the same group even when they have been disconnected.
 
 Due to the way that ProtoFlux works, this is a local-only fix. This means that other users in the session who don't have this mod will still get the bug even if they select the same nodes as you.
-
 It is unknown if this will have any side effects for the way that ProtoFlux is executed or compiled or if it could cause de-syncing.
+
+UPDATE: New non-local fix added (experimental) which fixes the node group for all users in the session.
 
 This is a workaround for this issue: https://github.com/Yellow-Dog-Man/Resonite-Issues/issues/907
 
